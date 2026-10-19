@@ -35,7 +35,7 @@ jobs:
       - name: Fetch restaurant menus
         run: python skruudaava/fetch_menus.py
       - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@v4
         with:
           path: .
       - name: Deploy site
