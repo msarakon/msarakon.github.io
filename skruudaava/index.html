@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="en">
+<html lang="fi">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Today's Lunch | Kamppi</title>
+  <title>Päivän lounas | Kamppi</title>
   <style>
     :root { color-scheme: light; --ink: #202922; --muted: #626b64; --accent: #176346; --line: #d9dfda; }
     * { box-sizing: border-box; }
@@ -44,11 +44,11 @@
 <body>
   <main>
     <header>
-      <div><p class="eyebrow">Helsinki / Kamppi</p><h1>Today's lunch</h1><p id="date"></p></div>
-      <button id="refresh" type="button">Refresh</button>
+      <div><p class="eyebrow">Helsinki / Kamppi</p><h1>Päivän lounas</h1><p id="date"></p></div>
+      <button id="refresh" type="button">Päivitä</button>
     </header>
     <div id="restaurants"></div>
-    <footer>Menus via public third-party proxies <a href="https://allorigins.win/" target="_blank" rel="noopener noreferrer">AllOrigins</a> and <a href="https://codetabs.com/cors-proxy/cors-proxy.html" target="_blank" rel="noopener noreferrer">CodeTabs</a>. Availability and freshness depend on the restaurant and proxies. Confirm allergens with the restaurant.</footer>
+    <footer>Ruokalistat haetaan säännöllisesti ravintoloiden verkkosivuilta. Tietojen saatavuus ja ajantasaisuus riippuvat ravintolasta ja viimeisimmästä päivityksestä. Varmista allergeenit ravintolasta.</footer>
   </main>
   <script>
     const restaurants = [
@@ -76,7 +76,7 @@
     const clean = element => element?.textContent.replace(/\s+/g, ' ').trim() || '';
 
     function helsinkiDate(now = new Date()) {
-      const parts = new Intl.DateTimeFormat('en-GB', {
+      const parts = new Intl.DateTimeFormat('fi-FI', {
         timeZone: 'Europe/Helsinki', year: 'numeric', month: 'numeric', day: 'numeric'
       }).formatToParts(now);
       const part = type => Number(parts.find(entry => entry.type === type).value);
@@ -88,7 +88,7 @@
         day: part('day'), month: part('month'), year: part('year'),
         weekday: weekdays[date.getUTCDay()], weekend: [0, 6].includes(date.getUTCDay()),
         week: Math.ceil(((thursday - yearStart) / 86400000 + 1) / 7),
-        label: new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Helsinki', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)
+        label: new Intl.DateTimeFormat('fi-FI', { timeZone: 'Europe/Helsinki', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)
       };
     }
 
@@ -159,7 +159,7 @@
       const content = document.createElement('div');
       content.setAttribute('aria-live', 'polite');
       article.append(content);
-      const source = appendText(article, 'a', 'Original menu', 'source');
+      const source = appendText(article, 'a', 'Ravintolan ruokalista', 'source');
       source.href = restaurant.menu || restaurant.source;
       source.target = '_blank'; source.rel = 'noopener noreferrer';
       document.querySelector('#restaurants').append(article);
@@ -168,47 +168,42 @@
 
     const sections = new Map(restaurants.map(restaurant => [restaurant.id, createSection(restaurant)]));
 
-    async function fetchMenuHtml(url) {
-      const proxies = [
-        'https://api.allorigins.win/raw?url=',
-        'https://api.codetabs.com/v1/proxy?quest='
-      ];
-      for (const proxy of proxies) {
-        const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 12000);
-        try {
-          const response = await fetch(proxy + encodeURIComponent(url), {
-            signal: controller.signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer'
-          });
-          if (response.ok === false) throw new Error('HTTP ' + response.status);
-          const html = await response.text();
-          if (/<(?:html|body|div|p|ul)\b/i.test(html) === false) throw new Error('Proxy did not return HTML');
-          return html;
-        } catch (error) {
-          console.warn('Menu proxy failed:', proxy, url, error);
-        } finally {
-          clearTimeout(timeout);
+    async function fetchMenuHtml(restaurant) {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 12000);
+      try {
+        const response = await fetch('./data/' + restaurant.id + '.json', {
+          signal: controller.signal, credentials: 'omit', cache: 'no-store'
+        });
+        if (response.ok === false) throw new Error('HTTP ' + response.status);
+        const menu = await response.json();
+        if (menu.source !== (restaurant.menu || restaurant.source) ||
+            typeof menu.html !== 'string' || /<(?:html|body|div|p|ul)\b/i.test(menu.html) === false ||
+            typeof menu.fetchedAt !== 'string' || Number.isNaN(Date.parse(menu.fetchedAt))) {
+          throw new Error('Invalid cached menu');
         }
+        return menu;
+      } finally {
+        clearTimeout(timeout);
       }
-      throw new Error('All public proxies failed');
     }
 
     async function loadRestaurant(restaurant, today) {
       const content = sections.get(restaurant.id);
       content.replaceChildren();
       if (today.weekend) {
-        appendText(content, 'p', 'No weekday lunch today.', 'status');
+        appendText(content, 'p', 'Ei arkilounasta tänään.', 'status');
         return;
       }
-      appendText(content, 'p', 'Fetching today\'s menu...', 'status');
+      appendText(content, 'p', 'Haetaan päivän ruokalistaa...', 'status');
       content.setAttribute('aria-busy', 'true');
       try {
-        const html = await fetchMenuHtml(restaurant.menu || restaurant.source);
-        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const menu = await fetchMenuHtml(restaurant);
+        const doc = new DOMParser().parseFromString(menu.html, 'text/html');
         const dishes = restaurant.parse(doc, today);
         content.replaceChildren();
         if (dishes.length === 0) {
-          appendText(content, 'p', 'No matching menu published for today. Check the original menu.', 'status');
+          appendText(content, 'p', 'Tälle päivälle ei löytynyt ruokalistaa. Tarkista ravintolan oma ruokalista.', 'status');
           return;
         }
         const list = document.createElement('ul');
@@ -220,10 +215,10 @@
           list.append(item);
         }
         content.append(list);
-        appendText(content, 'p', 'Checked ' + new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Helsinki', hour: '2-digit', minute: '2-digit' }).format(new Date()) + ' Helsinki time', 'status');
-      } catch (error) {
+        appendText(content, 'p', 'Haettu ' + new Intl.DateTimeFormat('fi-FI', { timeZone: 'Europe/Helsinki', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(menu.fetchedAt)) + ' Suomen aikaa', 'status');
+      } catch {
         content.replaceChildren();
-        appendText(content, 'p', 'Both public proxies failed or were blocked by the network. Open the original menu or try refreshing later.', 'status error');
+        appendText(content, 'p', 'Ruokalistan viimeisin päivitys ei ole saatavilla. Avaa ravintolan oma ruokalista tai yritä myöhemmin uudelleen.', 'status error');
       } finally {
         content.setAttribute('aria-busy', 'false');
       }
