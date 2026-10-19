@@ -2,10 +2,9 @@ name: Update Lunch Menus and Deploy Pages
 
 on:
   schedule:
-    - cron: '17,47 5-14 * * 1-5'
+    - cron: '0 2 * * *'
+      timezone: 'Europe/Helsinki'
   workflow_dispatch:
-  push:
-    branches: [main, master]
 
 permissions:
   contents: read
