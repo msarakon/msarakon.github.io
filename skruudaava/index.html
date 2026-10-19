@@ -29,7 +29,9 @@
     #restaurants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; padding-top: 30px; }
     article { min-width: 0; }
     .photo { width: 100%; height: 145px; object-fit: cover; background: var(--highlight); display: block; margin-bottom: 20px; }
-    h2 { font-size: 18px; margin: 0 0 7px; overflow-wrap: anywhere; text-transform: uppercase; letter-spacing: 0; }
+    .restaurant-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 7px; }
+    h2 { font-size: 18px; margin: 0; overflow-wrap: anywhere; text-transform: uppercase; letter-spacing: 0; }
+    .discount-tag { background: var(--teal); color: var(--wash); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.5; padding: 2px 5px; border-radius: 3px; white-space: nowrap; }
     .hours { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
     .status { color: var(--muted); font-size: 14px; margin: 18px 0; }
     .error { color: var(--error); }
@@ -63,12 +65,14 @@
     const restaurants = [
       {
         id: 'palmia', name: 'Huippu 34', hours: 'Annankatu 34 / 11:00 - 13:30',
+        aavaDiscount: true,
         source: 'https://www.palmia.fi/ravintola/ravintola-huippu-34/',
         image: 'https://www.palmia.fi/wp-content/uploads/2025/12/ravintola-huippu-34-lounaslinjasto-palmia.webp',
         parse: parsePalmia
       },
       {
         id: 'bierhaus', name: 'Bierhaus Kamppi', hours: 'Annanaukio 1 / 10:30 - 14:00',
+        aavaDiscount: true,
         source: 'https://ardenrestaurants.fi/ravintolamme/bierhaus-kamppi/',
         menu: 'https://www.ardenrestaurants.fi/menut/BHkamppi/',
         image: 'https://ardenrestaurants.fi/wp-content/uploads/2025/10/IMG_3573-1-1500x965.jpg',
@@ -161,7 +165,11 @@
       image.className = 'photo'; image.src = restaurant.image; image.alt = ''; image.referrerPolicy = 'no-referrer';
       image.addEventListener('error', () => image.hidden = true);
       article.append(image);
-      appendText(article, 'h2', restaurant.name).id = restaurant.id + '-title';
+      const heading = document.createElement('div');
+      heading.className = 'restaurant-heading';
+      appendText(heading, 'h2', restaurant.name).id = restaurant.id + '-title';
+      if (restaurant.aavaDiscount) appendText(heading, 'span', 'Aavan alennus', 'discount-tag');
+      article.append(heading);
       appendText(article, 'p', restaurant.hours, 'hours');
       const content = document.createElement('div');
       content.setAttribute('aria-live', 'polite');
