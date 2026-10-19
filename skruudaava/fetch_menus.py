@@ -8,6 +8,7 @@ from urllib.request import Request, urlopen
 SOURCES = {
     "palmia": "https://www.palmia.fi/ravintola/ravintola-huippu-34/",
     "bierhaus": "https://www.ardenrestaurants.fi/menut/BHkamppi/",
+    "kansis": "https://ravintolakansis.fi/lounas/",
     "bruuveri": "https://bruuveri.fi/lounas/",
 }
 

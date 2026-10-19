@@ -26,11 +26,11 @@
     .eyebrow { color: var(--ink); font-size: 14px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; margin: 0 0 4px; }
     #date { color: var(--muted); margin: 0; }
     :focus-visible { outline: 3px solid var(--coral); outline-offset: 4px; }
-    #restaurants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; padding-top: 30px; }
+    #restaurants { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 32px; padding-top: 30px; }
     article { min-width: 0; }
     .photo { width: 100%; height: 145px; object-fit: cover; background: var(--highlight); display: block; margin-bottom: 20px; }
     .restaurant-heading { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 7px; }
-    h2 { font-size: 18px; margin: 0; overflow-wrap: anywhere; text-transform: uppercase; letter-spacing: 0; }
+    h2 { font-size: 16px; margin: 0; overflow-wrap: anywhere; text-transform: uppercase; letter-spacing: 0; }
     .discount-tag { background: var(--teal); color: var(--wash); font-size: 9px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; line-height: 1.5; padding: 2px 5px; border-radius: 3px; white-space: nowrap; }
     .hours { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
     .status { color: var(--muted); font-size: 14px; margin: 18px 0; }
@@ -38,10 +38,10 @@
     ul { list-style: none; margin: 0 0 18px; padding: 0; }
     li { padding: 13px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
     .category { display: block; color: var(--coral); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
-    .details { display: block; color: var(--muted); font-size: 14px; margin-top: 3px; }
+    .details { display: block; color: var(--muted); font-size: 12px; margin-top: 3px; }
     a { color: var(--coral); text-underline-offset: 4px; }
     a:hover { color: var(--teal); text-decoration-color: var(--teal); }
-    .source, .status.fetched { font-size: 13px; }
+    .source, .status.fetched { font-size: 11px; }
     footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 12px; }
     @media (max-width: 760px) {
       main { padding: 28px 20px 20px; }
@@ -83,7 +83,13 @@
         source: 'https://bruuveri.fi/lounas/',
         image: 'https://bruuveri.fi/wp-content/uploads/2026/05/Bruuveri-og.jpg',
         parse: parseBruuveri
-      }
+      },
+      {
+        id: 'kansis', name: 'Kansis', hours: 'Kansakoulukuja 1 / 11:00 - 14:00',
+        source: 'https://ravintolakansis.fi/lounas/',
+        image: 'https://ravintolakansis.fi/wp-content/uploads/2023/08/KIMG_1054.jpg',
+        parse: parseKansis
+      },
     ];
     const weekdays = ['sunnuntai', 'maanantai', 'tiistai', 'keskiviikko', 'torstai', 'perjantai', 'lauantai'];
     const clean = element => element?.textContent.replace(/\s+/g, ' ').trim() || '';
@@ -149,6 +155,22 @@
       return [];
     }
 
+    function parseKansis(doc, today) {
+      const heading = [...doc.querySelectorAll('h1, h2, h3, h4')].find(element =>
+        clean(element).toLocaleLowerCase('fi').startsWith(today.weekday + ' ') && matchesDate(clean(element), today, false));
+      if (heading == null) return [];
+      const elements = [...doc.querySelectorAll('h1, h2, h3, h4, p')];
+      const dishes = [];
+      for (const element of elements.slice(elements.indexOf(heading) + 1)) {
+        const text = clean(element);
+        if (/^H[1-4]$/.test(element.tagName) && weekdays.some(day => text.toLocaleLowerCase('fi').startsWith(day + ' '))) break;
+        if (element.tagName !== 'P') continue;
+        const match = text.match(/^([ABC])\)\s*(.+)$/i);
+        if (match) dishes.push({ category: match[1].toUpperCase(), name: match[2] });
+      }
+      return dishes;
+    }
+
     function appendText(parent, tag, text, className) {
       const element = document.createElement(tag);
       element.textContent = text;
@@ -161,10 +183,12 @@
       const article = document.createElement('article');
       article.id = restaurant.id;
       article.setAttribute('aria-labelledby', restaurant.id + '-title');
-      const image = document.createElement('img');
-      image.className = 'photo'; image.src = restaurant.image; image.alt = ''; image.referrerPolicy = 'no-referrer';
-      image.addEventListener('error', () => image.hidden = true);
-      article.append(image);
+      if (restaurant.image) {
+        const image = document.createElement('img');
+        image.className = 'photo'; image.src = restaurant.image; image.alt = ''; image.referrerPolicy = 'no-referrer';
+        image.addEventListener('error', () => image.hidden = true);
+        article.append(image);
+      }
       const heading = document.createElement('div');
       heading.className = 'restaurant-heading';
       appendText(heading, 'h2', restaurant.name).id = restaurant.id + '-title';
