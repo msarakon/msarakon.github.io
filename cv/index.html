@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Minna Sarakontu — Portfolio</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #fdf7fb;
+      --surface: #ffffff;
+      --accent: #9B4F96;
+      --accent-light: #f3e6f2;
+      --pink: #D60270;
+      --blue: #0038A8;
+      --text: #2d2d2d;
+      --muted: #6b7280;
+      --border: #e8d5e8;
+      --radius: 12px;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+    }
+
+    .hero {
+      background: linear-gradient(180deg, #fde8f0 0%, #f3e6f2 50%, #e6eaf8 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 4rem 0 3rem;
+      text-align: center;
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      margin-bottom: 0.4rem;
+      color: #fff;
+      text-shadow:
+        -1px -1px 0 var(--pink),
+         1px -1px 0 var(--pink),
+        -1px  1px 0 var(--blue),
+         1px  1px 0 var(--blue),
+         0   -4px 12px rgba(214,2,112,0.45),
+         0    4px 12px rgba(0,56,168,0.45);
+    }
+
+    .hero .title {
+      font-size: 1.1rem;
+      color: var(--pink);
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+    }
+
+    .hero .bio {
+      max-width: 600px;
+      margin: 0 auto 2rem;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+
+    .contact-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .contact-links a {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: var(--bg);
+      transition: border-color 0.2s, background 0.2s;
+    }
+
+    .contact-links a:hover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      text-decoration: none;
+    }
+
+    main {
+      padding: 3rem 0 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 3rem;
+    }
+
+    section {
+      padding: 1.5rem 0;
+    }
+
+    section h2 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: var(--muted);
+      margin-bottom: 1.25rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .experience-list {
+      position: relative;
+      padding-left: 2rem;
+    }
+
+    .experience-list::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 6px;
+      bottom: 6px;
+      width: 2px;
+      background: linear-gradient(180deg, var(--pink), var(--accent), var(--blue));
+      border-radius: 2px;
+    }
+
+    .experience-item {
+      position: relative;
+      padding: 0 0 2rem 1.25rem;
+    }
+
+    .experience-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .experience-item::before {
+      content: '';
+      position: absolute;
+      left: -1.95rem;
+      top: 6px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #c8bfcf;
+      border: 3px solid var(--bg);
+      box-shadow: 0 0 0 2px #c8bfcf;
+    }
+
+    .experience-item.active::before {
+      background: var(--pink);
+      box-shadow: 0 0 0 2px var(--pink), 0 0 0 5px #fde8f0;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 2px var(--pink), 0 0 0 5px #fde8f0; }
+      50%       { box-shadow: 0 0 0 2px var(--pink), 0 0 0 8px transparent; }
+    }
+
+    .experience-item .company {
+      color: var(--blue);
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
+    }
+
+    .experience-item .company-desc {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin: -0.2rem 0 0.7rem;
+      max-width: 62ch;
+    }
+
+    .role-list {
+      display: grid;
+      gap: 0.4rem;
+      margin: 0;
+      padding-left: 0;
+      list-style-position: inside;
+    }
+
+    .experience-item .role-list {
+      margin-top: 0.7rem;
+    }
+
+    .role-entry {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: 1rem;
+      padding: 0.15rem 0;
+    }
+
+    .role-entry::marker {
+      color: var(--accent);
+    }
+
+    .role-entry .role {
+      font-weight: 500;
+      font-size: 0.95rem;
+    }
+
+    .role-entry .years {
+      font-size: 0.8rem;
+      color: var(--muted);
+      white-space: nowrap;
+    }
+
+    /* Skills */
+    .skills-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+    }
+
+    .skill-tag {
+      background: var(--accent-light);
+      color: var(--accent);
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      border: 1px solid #d4b8d2;
+      pointer-events: none;
+    }
+
+    .skill-tag:nth-child(3n+1) { color: var(--pink);   background: #fde8f0; border-color: #f0b8d0; }
+    .skill-tag:nth-child(3n+2) { color: var(--accent); background: var(--accent-light); border-color: #d4b8d2; }
+    .skill-tag:nth-child(3n+3) { color: var(--blue);   background: #e6eaf8; border-color: #b8c2e8; }
+
+    .experience-list hr {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 0 0 2rem 0;
+    }
+
+    .experience-list .skill-tag {
+      font-size: 0.72rem;
+      padding: 0.2rem 0.55rem;
+      display: inline-block;
+      margin: 0 0.35rem 0.35rem 0;
+    }
+
+    /* Footer */
+    footer {
+      text-align: center;
+      padding: 1.5rem;
+      font-size: 0.85rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+
+    @media (max-width: 500px) {
+      .hero h1 { font-size: 1.8rem; }
+      .experience-list { padding-left: 1.5rem; }
+    }
+
+    @media print {
+      @page { margin: 1.2cm 1.5cm; }
+
+      body { background: #fff; color: #000; font-size: 10pt; }
+
+      .hero {
+        background: none;
+        border-bottom: 1px solid #ccc;
+        padding: 0.8rem 0 0.6rem;
+      }
+
+      .hero h1 {
+        color: #000;
+        font-size: 1.6rem;
+        text-shadow: none;
+      }
+
+      .hero .title { color: var(--pink); }
+
+      .hero .bio { color: #444; }
+
+      .contact-links a {
+        border: none;
+        background: none;
+        padding: 0;
+        font-size: 9pt;
+        color: #000;
+      }
+
+      .contact-links { gap: 1.5rem; }
+
+      .container { max-width: 100%; padding: 0; }
+
+      main { padding: 0.5rem 0 0; gap: 0.5rem; }
+
+      section { padding: 0.4rem 0; }
+
+      section h2 { margin-bottom: 0.5rem; }
+
+      .experience-item { padding-bottom: 0.8rem; }
+
+      .experience-list::before { background: #ccc; }
+
+      .experience-item::before,
+      .experience-item.active::before {
+        background: #888;
+        box-shadow: none;
+        animation: none;
+      }
+
+      .experience-item .company { color: #000; }
+
+      .experience-item .company-desc { color: #444; }
+
+      .role-entry .years { color: #444; }
+
+      .skill-tag {
+        background: none !important;
+        color: #444 !important;
+        border-color: #ccc !important;
+        font-size: 7.5pt;
+        padding: 0.1rem 0.4rem;
+      }
+
+      footer, .contact-links { display: none; }
+
+      a[href]::after { content: none; }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="hero">
+    <div class="container">
+      <h1>🌸 Minna Sarakontu 🌼</h1>
+      <p class="title">Full-stack Web Developer, 10+ years of experience</p>
+      <p class="bio">
+        Master of Computer Science — and self-taught Master of Googling — who loves
+        front-end, usability, functional programming and clean code.
+        Hobbies and interests include nature, psychology, art, gaming and long-distance running.
+      </p>
+      <nav class="contact-links">
+        <a href="mailto:minna.sarakontu@gmail.com">
+          ✉️ minna.sarakontu@gmail.com
+        </a>
+        <a href="https://www.linkedin.com/in/minna-sarakontu/" target="_blank" rel="noopener">
+          👩‍💼 in LinkedIn
+        </a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <section>
+      <h2>Experience</h2>
+      <div class="experience-list">
+        <div class="experience-item active">
+          <div class="company">Aava ja Pikkujätti Oy</div>
+          <p class="company-desc">
+            One of the founding members of the in-house development team for a family-owned medical group providing healthcare services for all ages. 
+            Previously built B2B software for occupational healthcare customers and internal tooling, now focusing on customer-facing web and mobile applications, including web reservation and patient portal.
+          </p>
+          <span class="skill-tag">Node.js</span>
+          <span class="skill-tag">TypeScript</span>
+          <span class="skill-tag">React</span>
+          <span class="skill-tag">React Native</span>
+          <span class="skill-tag">CSS</span>
+          <span class="skill-tag">AWS</span>
+          <span class="skill-tag">PostgreSQL</span>
+          <span class="skill-tag">MSSQL</span>
+          <span class="skill-tag">Copilot</span>
+          <ul class="role-list">
+            <li class="role-entry">
+              <span class="role">Senior Developer</span>
+              <span class="years">2022 — present</span>
+            </li>
+            <li class="role-entry">
+              <span class="role">Developer</span>
+              <span class="years">2019 — 2022</span>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <div class="experience-item">
+          <div class="company">Geometrix Oy</div>
+          <p class="company-desc">Designed, developed and maintained GIS and work management B2B software products. Started in UI and graphic design, then gradually expanded into full-stack web development.</p>
+          <span class="skill-tag">Java</span>
+          <span class="skill-tag">jQuery</span>
+          <span class="skill-tag">AngularJS</span>
+          <span class="skill-tag">OpenLayers</span>
+          <span class="skill-tag">CSS</span>
+          <span class="skill-tag">PostgreSQL</span>
+          <span class="skill-tag">MSSQL</span>      
+          <ul class="role-list">
+            <li class="role-entry">
+              <span class="role">Software Developer</span>
+              <span class="years">2015 — 2019</span>
+            </li>
+            <li class="role-entry">
+              <span class="role">UI Designer</span>
+              <span class="years">2014 — 2015</span>
+            </li>
+          </ul>
+        </div>
+        <hr>
+        <div class="experience-item">
+          <div class="company">Stupid Stupid Games</div>
+          <p class="company-desc">Worked on concept art and a marketing page for a small indie game studio.</p>
+          <span class="skill-tag">Drawing</span>
+          <span class="skill-tag">Wordpress</span>
+          <ul class="role-list">
+            <li class="role-entry">
+              <span class="role">Graphic Artist (internship)</span>
+              <span class="years">2013 — 2014</span>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer>
+    <p>© 2026 Minna Sarakontu</p>
+  </footer>
+
+</body>
+</html>
