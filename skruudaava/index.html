@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Today's Lunch | Kamppi</title>
+  <style>
+    :root { color-scheme: light; --ink: #202922; --muted: #626b64; --accent: #176346; --line: #d9dfda; }
+    * { box-sizing: border-box; }
+    body { margin: 0; color: var(--ink); background: #fafbf9; font: 16px/1.6 "Avenir Next", "Trebuchet MS", sans-serif; letter-spacing: 0; }
+    main { max-width: 1200px; margin: auto; padding: 48px 28px 24px; }
+    header { display: flex; align-items: center; justify-content: space-between; gap: 24px; padding-bottom: 28px; border-bottom: 2px solid var(--ink); }
+    .eyebrow { color: var(--accent); font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0; margin: 0 0 4px; }
+    h1 { font: 46px/1.1 Georgia, serif; margin: 0 0 10px; }
+    #date { color: var(--muted); margin: 0; }
+    button { font: inherit; background: var(--accent); color: white; border: 0; border-radius: 4px; padding: 9px 18px; cursor: pointer; flex-shrink: 0; }
+    button:hover { background: #104b34; }
+    button:disabled { opacity: .6; cursor: wait; }
+    :focus-visible { outline: 3px solid #c46720; outline-offset: 4px; }
+    #restaurants { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; padding-top: 30px; }
+    article { min-width: 0; }
+    .photo { width: 100%; height: 145px; object-fit: cover; background: #e5eae4; display: block; margin-bottom: 20px; }
+    h2 { font: 27px/1.2 Georgia, serif; margin: 0 0 7px; overflow-wrap: anywhere; }
+    .hours { color: var(--muted); font-size: 14px; margin: 0 0 16px; }
+    .status { color: var(--muted); font-size: 14px; margin: 18px 0; }
+    .error { color: #9b342a; }
+    ul { list-style: none; margin: 0 0 18px; padding: 0; }
+    li { padding: 13px 0; border-top: 1px solid var(--line); overflow-wrap: anywhere; }
+    .category { display: block; color: var(--accent); font-size: 11px; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+    .details { display: block; color: var(--muted); font-size: 14px; margin-top: 3px; }
+    a { color: var(--accent); text-underline-offset: 4px; }
+    .source { font-size: 14px; }
+    footer { margin-top: 40px; border-top: 1px solid var(--line); padding-top: 16px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 760px) {
+      main { padding: 28px 20px 20px; }
+      h1 { font-size: 36px; }
+      header { flex-wrap: wrap; gap: 18px; }
+      #restaurants { grid-template-columns: 1fr; gap: 36px; }
+      .photo { height: 170px; }
+    }
+    @media (prefers-reduced-motion: no-preference) { article { animation: appear .3s ease-out; } @keyframes appear { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } } }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div><p class="eyebrow">Helsinki / Kamppi</p><h1>Today's lunch</h1><p id="date"></p></div>
+      <button id="refresh" type="button">Refresh</button>
+    </header>
+    <div id="restaurants"></div>
+    <footer>Menus via public third-party proxies <a href="https://allorigins.win/" target="_blank" rel="noopener noreferrer">AllOrigins</a> and <a href="https://codetabs.com/cors-proxy/cors-proxy.html" target="_blank" rel="noopener noreferrer">CodeTabs</a>. Availability and freshness depend on the restaurant and proxies. Confirm allergens with the restaurant.</footer>
+  </main>
+  <script>
+    const restaurants = [
+      {
+        id: 'palmia', name: 'Huippu 34', hours: 'Annankatu 34 / 11:00 - 13:30',
+        source: 'https://www.palmia.fi/ravintola/ravintola-huippu-34/',
+        image: 'https://www.palmia.fi/wp-content/uploads/2025/12/ravintola-huippu-34-lounaslinjasto-palmia.webp',
+        parse: parsePalmia
+      },
+      {
+        id: 'bierhaus', name: 'Bierhaus Kamppi', hours: 'Annanaukio 1 / 10:30 - 14:00',
+        source: 'https://ardenrestaurants.fi/ravintolamme/bierhaus-kamppi/',
+        menu: 'https://www.ardenrestaurants.fi/menut/BHkamppi/',
+        image: 'https://ardenrestaurants.fi/wp-content/uploads/2025/10/IMG_3573-1-1500x965.jpg',
+        parse: parseBierhaus
+      },
+      {
+        id: 'bruuveri', name: 'Bruuveri', hours: 'Fredrikinkatu 63 / 10:30 - 14:30',
+        source: 'https://bruuveri.fi/lounas/',
+        image: 'https://bruuveri.fi/wp-content/uploads/2026/05/Bruuveri-og.jpg',
+        parse: parseBruuveri
+      }
+    ];
+    const weekdays = ['sunnuntai', 'maanantai', 'tiistai', 'keskiviikko', 'torstai', 'perjantai', 'lauantai'];
+    const clean = element => element?.textContent.replace(/\s+/g, ' ').trim() || '';
+
+    function helsinkiDate(now = new Date()) {
+      const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Helsinki', year: 'numeric', month: 'numeric', day: 'numeric'
+      }).formatToParts(now);
+      const part = type => Number(parts.find(entry => entry.type === type).value);
+      const date = new Date(Date.UTC(part('year'), part('month') - 1, part('day')));
+      const thursday = new Date(date);
+      thursday.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
+      const yearStart = new Date(Date.UTC(thursday.getUTCFullYear(), 0, 1));
+      return {
+        day: part('day'), month: part('month'), year: part('year'),
+        weekday: weekdays[date.getUTCDay()], weekend: [0, 6].includes(date.getUTCDay()),
+        week: Math.ceil(((thursday - yearStart) / 86400000 + 1) / 7),
+        label: new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Helsinki', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }).format(now)
+      };
+    }
+
+    function matchesDate(text, today, requireYear = true) {
+      const match = text.match(/\b(\d{1,2})\.(\d{1,2})\.?(?:(\d{4}))?(?!\d)/);
+      return Boolean(match && Number(match[1]) === today.day && Number(match[2]) === today.month &&
+        (match[3] ? Number(match[3]) === today.year : requireYear === false));
+    }
+
+    function parsePalmia(doc, today) {
+      const day = [...doc.querySelectorAll('.aromi-menu-language-fi .aromi-menu-day')]
+        .find(section => matchesDate(clean(section.querySelector('.aromi-menu-day-name')), today));
+      if (day == null) return [];
+      return [...day.querySelectorAll('.aromi-menu-day-meal__container')]
+        .filter(section => section.closest('.aromi-popup') == null)
+        .map(section => {
+          const dishes = [...section.querySelectorAll('.aromi-menu-day-meal-name-list__wrapper')].map(row => {
+            const diets = [...row.querySelectorAll('.diet-character')].map(clean).join(', ');
+            return clean(row.querySelector('.aromi-menu-day-meal-name')) + (diets ? ' (' + diets + ')' : '');
+          });
+          return { category: clean(section.querySelector('.aromi-menu-meal-category')), name: dishes[0], details: dishes.slice(1).join('; ') };
+        }).filter(dish => dish.name);
+    }
+
+    function parseBierhaus(doc, today) {
+      const day = [...doc.querySelectorAll('.card-body')]
+        .find(section => matchesDate(clean(section.querySelector('.description')), today));
+      if (day == null) return [];
+      return [...day.querySelectorAll('.item')].map(item => ({
+        name: clean(item.querySelector('strong')),
+        details: [...item.querySelectorAll('p')].filter(paragraph => paragraph.querySelector('strong') == null).map(clean).join(' ')
+      })).filter(dish => dish.name);
+    }
+
+    function parseBruuveri(doc, today) {
+      const week = [...doc.querySelectorAll('h2')].map(clean).join(' ').match(/vko\s*(\d+)/i);
+      if (week == null || Number(week[1]) !== today.week) return [];
+      const heading = [...doc.querySelectorAll('p, h2, h3, h4')].find(element =>
+        clean(element).toLocaleLowerCase('fi').startsWith(today.weekday + ' ') && matchesDate(clean(element), today, false));
+      if (heading == null) return [];
+      const elements = [...doc.body.querySelectorAll('*')];
+      for (let index = elements.indexOf(heading) + 1; index < elements.length; index++) {
+        const element = elements[index];
+        if (element.tagName === 'UL') return [...element.querySelectorAll('li')].map(item => ({ name: clean(item) }));
+        if (weekdays.some(day => clean(element).toLocaleLowerCase('fi').startsWith(day + ' ')) && /^(P|H[2-4])$/.test(element.tagName)) break;
+      }
+      return [];
+    }
+
+    function appendText(parent, tag, text, className) {
+      const element = document.createElement(tag);
+      element.textContent = text;
+      if (className) element.className = className;
+      parent.append(element);
+      return element;
+    }
+
+    function createSection(restaurant) {
+      const article = document.createElement('article');
+      article.id = restaurant.id;
+      article.setAttribute('aria-labelledby', restaurant.id + '-title');
+      const image = document.createElement('img');
+      image.className = 'photo'; image.src = restaurant.image; image.alt = ''; image.referrerPolicy = 'no-referrer';
+      image.addEventListener('error', () => image.hidden = true);
+      article.append(image);
+      appendText(article, 'h2', restaurant.name).id = restaurant.id + '-title';
+      appendText(article, 'p', restaurant.hours, 'hours');
+      const content = document.createElement('div');
+      content.setAttribute('aria-live', 'polite');
+      article.append(content);
+      const source = appendText(article, 'a', 'Original menu', 'source');
+      source.href = restaurant.menu || restaurant.source;
+      source.target = '_blank'; source.rel = 'noopener noreferrer';
+      document.querySelector('#restaurants').append(article);
+      return content;
+    }
+
+    const sections = new Map(restaurants.map(restaurant => [restaurant.id, createSection(restaurant)]));
+
+    async function fetchMenuHtml(url) {
+      const proxies = [
+        'https://api.allorigins.win/raw?url=',
+        'https://api.codetabs.com/v1/proxy?quest='
+      ];
+      for (const proxy of proxies) {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 12000);
+        try {
+          const response = await fetch(proxy + encodeURIComponent(url), {
+            signal: controller.signal, credentials: 'omit', cache: 'no-store', referrerPolicy: 'no-referrer'
+          });
+          if (response.ok === false) throw new Error('HTTP ' + response.status);
+          const html = await response.text();
+          if (/<(?:html|body|div|p|ul)\b/i.test(html) === false) throw new Error('Proxy did not return HTML');
+          return html;
+        } catch (error) {
+          console.warn('Menu proxy failed:', proxy, url, error);
+        } finally {
+          clearTimeout(timeout);
+        }
+      }
+      throw new Error('All public proxies failed');
+    }
+
+    async function loadRestaurant(restaurant, today) {
+      const content = sections.get(restaurant.id);
+      content.replaceChildren();
+      if (today.weekend) {
+        appendText(content, 'p', 'No weekday lunch today.', 'status');
+        return;
+      }
+      appendText(content, 'p', 'Fetching today\'s menu...', 'status');
+      content.setAttribute('aria-busy', 'true');
+      try {
+        const html = await fetchMenuHtml(restaurant.menu || restaurant.source);
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const dishes = restaurant.parse(doc, today);
+        content.replaceChildren();
+        if (dishes.length === 0) {
+          appendText(content, 'p', 'No matching menu published for today. Check the original menu.', 'status');
+          return;
+        }
+        const list = document.createElement('ul');
+        for (const dish of dishes) {
+          const item = document.createElement('li');
+          if (dish.category) appendText(item, 'span', dish.category, 'category');
+          appendText(item, 'span', dish.name);
+          if (dish.details) appendText(item, 'span', dish.details, 'details');
+          list.append(item);
+        }
+        content.append(list);
+        appendText(content, 'p', 'Checked ' + new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Helsinki', hour: '2-digit', minute: '2-digit' }).format(new Date()) + ' Helsinki time', 'status');
+      } catch (error) {
+        content.replaceChildren();
+        appendText(content, 'p', 'Both public proxies failed or were blocked by the network. Open the original menu or try refreshing later.', 'status error');
+      } finally {
+        content.setAttribute('aria-busy', 'false');
+      }
+    }
+
+    async function refresh() {
+      const button = document.querySelector('#refresh');
+      if (button.disabled) return;
+      button.disabled = true;
+      const today = helsinkiDate();
+      document.querySelector('#date').textContent = today.label;
+      try { await Promise.all(restaurants.map(restaurant => loadRestaurant(restaurant, today))); }
+      finally { button.disabled = false; }
+    }
+
+    document.querySelector('#refresh').addEventListener('click', refresh);
+    document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') refresh(); });
+    setInterval(() => {
+      if (document.visibilityState === 'visible' && document.querySelector('#date').textContent !== helsinkiDate().label) refresh();
+    }, 60000);
+    refresh();
+  </script>
+</body>
+</html>
