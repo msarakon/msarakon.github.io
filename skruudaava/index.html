@@ -149,8 +149,21 @@
       const elements = [...doc.body.querySelectorAll('*')];
       for (let index = elements.indexOf(heading) + 1; index < elements.length; index++) {
         const element = elements[index];
-        if (element.tagName === 'UL') return [...element.querySelectorAll('li')].map(item => ({ name: clean(item) }));
+        if (heading.contains(element)) continue;
         if (weekdays.some(day => clean(element).toLocaleLowerCase('fi').startsWith(day + ' ')) && /^(P|H[2-4])$/.test(element.tagName)) break;
+        if (element.tagName === 'UL') return [...element.querySelectorAll('li')].map(item => ({ name: clean(item) }));
+        if (element.tagName !== 'STRONG' || !element.querySelector('br')) continue;
+        const lines = [''];
+        const appendTextLines = node => {
+          for (const child of node.childNodes) {
+            if (child.nodeType === Node.ELEMENT_NODE && child.tagName === 'BR') lines.push('');
+            else if (child.nodeType === Node.TEXT_NODE) lines[lines.length - 1] += child.textContent;
+            else appendTextLines(child);
+          }
+        };
+        appendTextLines(element);
+        const dishes = lines.map(line => line.replace(/\s+/g, ' ').trim()).filter(Boolean);
+        if (dishes.length) return dishes.map(name => ({ name }));
       }
       return [];
     }
