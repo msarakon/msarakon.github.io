@@ -73,9 +73,8 @@
       {
         id: 'bierhaus', name: 'Bierhaus Kamppi', hours: 'Annanaukio 1 / 10:30 - 14:00',
         aavaDiscount: true,
-        source: 'https://ardenrestaurants.fi/ravintolamme/bierhaus-kamppi/',
-        menu: 'https://www.ardenrestaurants.fi/menut/BHkamppi/',
-        image: 'https://ardenrestaurants.fi/wp-content/uploads/2025/10/IMG_3573-1-1500x965.jpg',
+        source: 'https://www.bierhaus.fi/kamppi/',
+        image: './images/bierhaus.jpg',
         parse: parseBierhaus
       },
       {
@@ -133,12 +132,15 @@
     }
 
     function parseBierhaus(doc, today) {
-      const day = [...doc.querySelectorAll('.card-body')]
-        .find(section => matchesDate(clean(section.querySelector('.description')), today));
+      const day = [...doc.querySelectorAll('.menu-day')]
+        .find(section => matchesDate(clean(section.querySelector('.menu-day-date')), today));
       if (day == null) return [];
-      return [...day.querySelectorAll('.item')].map(item => ({
-        name: clean(item.querySelector('strong')),
-        details: [...item.querySelectorAll('p')].filter(paragraph => paragraph.querySelector('strong') == null).map(clean).join(' ')
+      return [...day.querySelectorAll('.menu-row')].map(item => ({
+        name: clean(item.querySelector('.menu-name')),
+        details: [
+          [...item.querySelectorAll('.menu-marks abbr')].map(clean).join(', '),
+          clean(item.querySelector('.menu-marks-raw'))
+        ].filter(Boolean).join(' ')
       })).filter(dish => dish.name);
     }
 
