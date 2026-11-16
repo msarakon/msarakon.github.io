@@ -155,7 +155,7 @@
         if (heading.contains(element)) continue;
         if (weekdays.some(day => clean(element).toLocaleLowerCase('fi').startsWith(day + ' ')) && /^(P|H[2-4])$/.test(element.tagName)) break;
         if (element.tagName === 'UL') return [...element.querySelectorAll('li')].map(item => ({ name: clean(item) }));
-        if (element.tagName !== 'STRONG' || !element.querySelector('br')) continue;
+        if (!['P', 'STRONG'].includes(element.tagName) || !element.querySelector('br')) continue;
         const lines = [''];
         const appendTextLines = node => {
           for (const child of node.childNodes) {
